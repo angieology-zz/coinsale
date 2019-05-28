@@ -1,3 +1,14 @@
+# Coin Sale Dapp
+
+uses web3 1.0
+remix IDE to deploy
+openzepplin ERC20Mintable and MintedCrowdsale
+React front-end
+
+
+
+
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
