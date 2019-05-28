@@ -2,6 +2,7 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Web3 from 'web3';
+import { Form, Input, Button } from 'antd';
 // import EthereumTx from './ethereumjs-tx.min'
 
 var account = "0x5a30ED952b2d50c5520FF4EB6F943C8604A1de61"
@@ -466,7 +467,7 @@ var saleAbi = [
     "type": "function"
   }
 ]
-var saleAddress = "0xbbf289d846208c16edc8474705c748aff07732db"
+var saleAddress = "0x692a70d2e424a56d2c6c27aa97d1a86395877b3a"
 
 var web3 = new Web3(Web3.givenProvider || "ropsten.infura.io/v3/266fa98ce0294f4d9c8033e4cad95d6f");
   
@@ -478,74 +479,17 @@ const Crowdsale = new web3.eth.Contract(saleAbi, saleAddress)
 console.log("Crowdsale", Crowdsale)
 
 
-class App extends React.Component {
+class _App extends React.Component {
+
+  constructor (props){
+    super(props);
+    this.state= {receipt: null}
+  }
 
   componentDidMount() {
-
-
-
-//Sample of adding coinsale contract as minter to the coin, but this has been done in setup
-    
-
     // SampleCoin.methods.balanceOf(account).call().then(console.log)
-
-    Crowdsale.methods.buyTokens(account).send({ from: account, value: web3.utils.toWei("0.01", "ether")})
-    .on('transactionHash', (hash) => {
-     console.log("transactionHash", hash)
-    })
-    .on('confirmation', (confirmationNumber, receipt) => {
-        console.log("confirmationNumber",confirmationNumber )
-        console.log("receipt",receipt )
-    })
-    .on('receipt', (receipt) => {
-        // receipt example
-        console.log(receipt);
-      
-    })
-    .on('error', console.error); // 
-  // this.addMinter()
-  //  window.addEventListener('load', async () => {
-      // Modern dapp browsers...
-      // if (window.ethereum) {
-      //     window.web3 = new Web3(ethereum);
-      //     try {
-      //         // Request account access if needed
-      //         await ethereum.enable();
-      //         // Acccounts now exposed
-      //         web3.eth.sendTransaction({/* ... */});
-      //     } catch (error) {
-      //         // User denied account access...
-      //     }
-      // }
-     // // Legacy dapp browsers...
-      // // else if (window.web3) {
-      //     window.web3 = new Web3(web3.currentProvider);
-      //     // Acccounts always exposed
-      //     web3.eth.sendTransaction({/* ... */});
-      // }
-      // // Non-dapp browsers...
-      // else {
-        //use infura
-      
-
-          // const data = SampleCoin.methods.addMinter(0xaa271e1a000000000000000000000000ca35b7d915458ef540ade6068dfe2f44e8fa733c).encodeABI()
-
-         
-
-          // // SampleCoin.methods.name().call().then((result) => console.log(result))
-          // web3.eth.call(tx).then(res => {
-          //   //web3.eth.sendSignedTransaction(signed.rawTransaction).on('receipt', console.log)
-          //   console.log(res)
-          // });
-
-         
-    
-    
-      //}
-  //  });
-    
-    
   }
+
 // add minter role to crowdsale so it is able to mint tokens during crowdsale
 // has already been done in setup, not used in app
   addMinter = () => {
@@ -570,30 +514,104 @@ class App extends React.Component {
           .on('error', console.error); // 
   }
 
+  buyTokens = (purchaserAccount, amountEth) => {
+    var amountAsString = amountEth.toString()
+    Crowdsale.methods.buyTokens(purchaserAccount).send({ from: account, value: web3.utils.toWei(amountAsString, "ether")})
+    .on('transactionHash', (hash) => {
+     console.log("transactionHash", hash)
+    })
+    .on('confirmation', (confirmationNumber, receipt) => {
+        console.log("confirmationNumber",confirmationNumber )
+        console.log("receipt", receipt )
+    })
+    .on('receipt', (receipt) => {
+        // receipt example
+        console.log(receipt);
+      //show state
+
+      this.setState({ receipt: receipt})
+    })
+    .on('error', console.error); // 
+  }
+
+  //form methods
+
+//form submission
+
+handleSubmit = e => {
+  e.preventDefault();
+  this.props.form.validateFields((err, values) => {
+    if (!err) {
+      console.log('Received values of form: ', values);
+      this.buyTokens(values.purchaser, values.amount)
+    }
+  });
+};
 
   render () {
+    const { getFieldDecorator, getFieldsError } = this.props.form;
+
+    function hasErrors (fieldsError) {
+    return Object.keys(fieldsError).some(field => fieldsError[field]);
+  }
+
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <p>
-            Edit <code>src/App.js</code> and save to reload.
+            Purchase Sample Coin (SMP) // Minted Crowdsale
+            <br/>
+            Rate: 1 ETH for 1 SMP
+            <br/>
+            Note: please turn off privacy mode (in settings) of Metamask to allow access
           </p>
           <a
             className="App-link"
-            href="https://reactjs.org"
+            href="http://lite.ropsten.ethstats.surge.sh" ///#/tx/
             target="_blank"
             rel="noopener noreferrer"
           >
-            Learn React
+            View Ropsten Transactions
           </a>
+          <Form layout="inline" onSubmit={this.handleSubmit}>
+        <Form.Item >
+          {getFieldDecorator('purchaser', {
+            rules: [{ required: true, message: 'Please input your account from Metamask' }],
+          })(
+            <Input
+             
+              placeholder="Account"
+            />,
+          )}
+        </Form.Item>
+        <Form.Item >
+          {getFieldDecorator('amount', {
+            rules: [{ required: true, message: 'Please input amount to purchase' }],
+          })(
+            <Input
+           
+              placeholder="Amount"
+            />,
+          )}
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" disabled={hasErrors(getFieldsError())}>
+           Buy SMP
+          </Button>
+        </Form.Item>
+      </Form>
+      {this.state.receipt && <p>Result: {this.state.receipt}</p>}
+      
         </header>
+      
       </div>
     );
   }
 
 
 }
+const App = Form.create({ name: 'form' })(_App);
 
 
 export default App;
